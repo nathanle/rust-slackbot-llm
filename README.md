@@ -15,8 +15,9 @@ A Slack chat bot written in Rust that allows the user to interact with a Mistral
 ## Configuring, compiling and running
 
 Possible apt packages needed:
-        libfontconfig1-dev
-
+```bash
+        apt-get install gcc libssl-dev libfontconfig1-dev
+```
 Create an `.env` file at the root of the repository (same folder as the `Cargo.toml` file) with:
 
         SLACK_OAUTH_TOKEN="bot_user_oauth_token_from_previous_step"
