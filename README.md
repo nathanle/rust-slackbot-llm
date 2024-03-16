@@ -18,6 +18,8 @@ Create an `.env` file at the root of the repository (same folder as the `Cargo.t
 
         SLACK_OAUTH_TOKEN="bot_user_oauth_token_from_previous_step"
         SLACK_SIGNING_SECRET="signing_secret_from_previous_step"
+        DATABASE_URL = "sqlite://db/db.sqlite3?mode=rwc"
+        
 
 and run without Docker compose:
 
