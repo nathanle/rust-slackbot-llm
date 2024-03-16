@@ -1,6 +1,6 @@
 A Slack chat bot written in Rust that allows the user to interact with a Mistral large language model. For previous version that used the Hugging Face API, see commit [246011b01](https://github.com/randommm/rust-slackbot-llm/tree/246011b01cd9089a3bf4dfa08f431909df8c7b60).
 
-*NEEDS AT LEAST 16GB OF MEMORY
+## NEEDS AT LEAST 16GB OF MEMORY
 
 <img src="https://github.com/randommm/rust-slackbot-llm/assets/4267674/c26032af-81fc-4e12-a1ef-b4a33eee606e" alt="screenshot" width="700"/>
 
