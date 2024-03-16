@@ -181,7 +181,7 @@ async fn process_slack_events(
         .execute(&db_pool)
         .await?;
 
-        let mut initial_message = "Placed message in the LLM queue.".to_owned();
+        let mut initial_message = " Placed message in the LLM queue.".to_owned();
         let _ = sqlx::query_as("SELECT COUNT(*) FROM queue")
             .fetch_one(&db_pool)
             .await
