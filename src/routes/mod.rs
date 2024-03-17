@@ -38,25 +38,26 @@ pub async fn create_routes() -> Result<Router, Box<dyn std::error::Error>> {
             Ok(_) => println!("Create db success"),
             Err(error) => panic!("error: {}", error),
         }
+
+        let db = SqlitePool::connect(database_url.as_str()).await.unwrap();
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        let migrations = std::path::Path::new(&crate_dir).join("./migrations");
+        let migration_results = sqlx::migrate::Migrator::new(migrations)
+            .await
+            .unwrap()
+            .run(&db)
+            .await;
+        match migration_results {
+            Ok(_) => println!("Migration success"),
+            Err(error) => {
+                panic!("error: {}", error);
+            }
+        }
+        println!("migration: {:?}", migration_results);
+        
     } else {
         println!("Database exists");
     }
-    let db = SqlitePool::connect(database_url.as_str()).await.unwrap();
-    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-    let migrations = std::path::Path::new(&crate_dir).join("./migrations");
-    let migration_results = sqlx::migrate::Migrator::new(migrations)
-        .await
-        .unwrap()
-        .run(&db)
-        .await;
-    match migration_results {
-        Ok(_) => println!("Migration success"),
-        Err(error) => {
-            panic!("error: {}", error);
-        }
-    }
-    println!("migration: {:?}", migration_results);
-    
     let db_pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(database_url.as_str())
