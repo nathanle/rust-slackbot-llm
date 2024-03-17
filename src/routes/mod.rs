@@ -9,6 +9,7 @@ use axum::{
 use dotenvy::var;
 use error_handling::AppError;
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
+use sqlx::{migrate::MigrateDatabase, Sqlite};
 
 #[derive(Clone, FromRef)]
 pub struct SlackOAuthToken(pub String);
@@ -31,6 +32,31 @@ pub async fn create_routes() -> Result<Router, Box<dyn std::error::Error>> {
         .map_err(|_| "Expected SLACK_SIGNING_SECRET in the environment or .env file")?;
     let slack_signing_secret = SlackSigningSecret(slack_signing_secret);
     let database_url = var("DATABASE_URL").unwrap_or("sqlite://db/db.sqlite3".to_owned());
+    if !Sqlite::database_exists(database_url.as_str()).await.unwrap_or(false) {
+        println!("Creating database {}", database_url);
+        match Sqlite::create_database(database_url.as_str()).await {
+            Ok(_) => println!("Create db success"),
+            Err(error) => panic!("error: {}", error),
+        }
+    } else {
+        println!("Database exists");
+    }
+    let db = SqlitePool::connect(database_url.as_str()).await.unwrap();
+    let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    let migrations = std::path::Path::new(&crate_dir).join("./migrations");
+    let migration_results = sqlx::migrate::Migrator::new(migrations)
+        .await
+        .unwrap()
+        .run(&db)
+        .await;
+    match migration_results {
+        Ok(_) => println!("Migration success"),
+        Err(error) => {
+            panic!("error: {}", error);
+        }
+    }
+    println!("migration: {:?}", migration_results);
+    
     let db_pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(database_url.as_str())
