@@ -53,6 +53,7 @@ pub async fn create_routes() -> Result<Router, Box<dyn std::error::Error>> {
                 panic!("error: {}", error);
             }
         }
+        sqlx::Pool::close(&db).await;
         println!("migration: {:?}", migration_results);
         
     } else {
