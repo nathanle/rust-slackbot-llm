@@ -107,7 +107,7 @@ pub async fn start_llm_worker(db_pool: SqlitePool, slack_oauth_token: SlackOAuth
                 })
                 .join()
             });
-            error!("LLM worker thread exited with message: {res:?}, restarting in 5 seconds");
+            error!("LLM worker thread exited with message: {res:#?}, restarting in 5 seconds");
             thread::sleep(std::time::Duration::from_secs(5));
         }
     });

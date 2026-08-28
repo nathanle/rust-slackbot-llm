@@ -67,7 +67,8 @@ impl Model {
         let model_weights = {
             let model = gguf_file::Content::read(&mut file)?;
             let mut total_size_in_bytes = 0;
-            for (_, tensor) in model.tensor_infos.iter() {
+            //for (_, tensor) in model.tensor_infos.iter() {
+            for tensor in model.tensor_infos.values() {
                 let elem_count = tensor.shape.elem_count();
                 total_size_in_bytes +=
                     elem_count * tensor.ggml_dtype.type_size() / tensor.ggml_dtype.block_size();
