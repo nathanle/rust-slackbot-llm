@@ -69,7 +69,8 @@ pub async fn create_routes() -> Result<Router, Box<dyn std::error::Error>> {
         .await
         .unwrap_or_default();
 
-    start_llm_worker(db_pool.clone(), slack_oauth_token.clone()).await;
+    //start_llm_worker(db_pool.clone(), slack_oauth_token.clone()).await;
+    start_llm_worker(db_pool.clone(), slack_oauth_token.clone());
 
     let app_state = AppState {
         db_pool,

@@ -3,21 +3,22 @@
 // https://github.com/huggingface/candle/blob/main/LICENSE-APACHE
 // https://github.com/huggingface/candle/blob/main/LICENSE-MIT
 
-use candle::quantized::gguf_file;
-use candle::{Device, Tensor};
+use candle_core::quantized::gguf_file;
+use candle_core::{Device, Tensor};
 use candle_transformers::generation::LogitsProcessor;
 use candle_transformers::models::quantized_llama as model;
 use log::{info, trace};
 use model::ModelWeights;
 use tokenizers::Tokenizer;
+use hf_hub::HFClient;
 
 pub fn print_stats(temperature: Option<f64>, repeat_penalty: f32, repeat_last_n: usize) {
     info!(
         "avx: {}, neon: {}, simd128: {}, f16c: {}",
-        candle::utils::with_avx(),
-        candle::utils::with_neon(),
-        candle::utils::with_simd128(),
-        candle::utils::with_f16c()
+        candle_core::utils::with_avx(),
+        candle_core::utils::with_neon(),
+        candle_core::utils::with_simd128(),
+        candle_core::utils::with_f16c()
     );
     info!(
         "temp: {:.2} repeat-penalty: {:.2} repeat-last-n: {}",
@@ -41,7 +42,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn start_model(
+    pub async fn start_model(
         temperature: Option<f64>,
         top_p: Option<f64>,
         seed: Option<u64>,
@@ -51,18 +52,35 @@ impl Model {
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         print_stats(temperature, repeat_penalty, repeat_last_n);
 
-        let repo = "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF";
-        // let filename = "mistral-7b-instruct-v0.1.Q5_K_M.gguf";
+        //let repo = "Mixtral-8x7B-Instruct-v0.1-GGUF";
+        //let repo = "openai_gpt-oss-20b-GGUF";
+        let base = "TheBloke";
+        //let repo = "Qwen2.5-7B-Instruct-GGUF";
+        let repo = "Mixtral-8x7B-Instruct-v0.1-GGUF";
+        //let filename = "mixtral-8x7b-instruct-v0.1.Q2_K.gguf";
+        //let filename = "qwen2.5-7b-instruct-q2_k.gguf";
+        //let filename = "openai_gpt-oss-20b-imatrix.gguf";
+        //let filename = "Qwen2.5-7B.gguf";
+        //let filename = "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/resolve/main/mixtral-8x7b-instruct-v0.1.Q2_K.gguf";
         let filename = "mixtral-8x7b-instruct-v0.1.Q2_K.gguf";
 
-        let api = hf_hub::api::sync::Api::new()?;
-        let api = api.model(repo.to_string());
-        let model_path = api.get(filename)?;
+        let api = HFClient::new()?;
+        //let api = api.model(repo.to_string());
+        //let model_path = api.get(filename)?;
+        //
+        let model_path = api
+            .model(base.to_string(), repo.to_string())
+            .download_file()
+            .filename(filename)
+            .send()
+            .await
+            .unwrap();
 
         let mut file = std::fs::File::open(model_path)?;
         let start = std::time::Instant::now();
 
-        let device = Device::Cpu;
+        //let device = Device::Cpu;
+        let device = candle_core::Device::new_cuda(0)?;
 
         let model_weights = {
             let model = gguf_file::Content::read(&mut file)?;
@@ -83,10 +101,26 @@ impl Model {
         };
         info!("model built");
 
-        let api = hf_hub::api::sync::Api::new()?;
-        let repo = "mistralai/Mixtral-8x7B-v0.1";
-        let api = api.model(repo.to_string());
-        let tokenizer_path = api.get("tokenizer.json")?;
+        let api = HFClient::new()?;
+        //mistralai/Mixtral-8x7B-v0.1
+        let repo = "Mixtral-8x7B-v0.1";
+        //let repo = "Qwen2.5-7B";
+        //let repo = "gpt-oss-20b";
+        let base = "mistralai";
+        //let repo = "mistralai/Mixtral-8x7B-v0.1";
+        //let api = api.model(repo.to_string());
+        info!("get tokenizer");
+        let filename = "tokenizer.json";
+        //let tokenizer_path = api.get("tokenizer.json")?;
+
+        let tokenizer_path = api
+            .model(base.to_string(), repo.to_string())
+            .download_file()
+            .filename(filename)
+            .send()
+            .await
+            .unwrap();
+
         let tokenizer = Tokenizer::from_file(tokenizer_path)
             .map_err(|e| format!("Error loading tokenizer: {e}"))?;
 
